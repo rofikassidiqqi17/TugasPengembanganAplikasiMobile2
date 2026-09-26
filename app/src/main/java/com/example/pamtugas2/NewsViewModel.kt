@@ -19,6 +19,7 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicInteger
 
 class NewsViewModel : ViewModel() {
 
@@ -49,6 +50,13 @@ class NewsViewModel : ViewModel() {
 
     private var streamJob: Job? = null
 
+    /**
+     * Penomoran berita bersifat global dan monoton (tidak pernah di-reset).
+     * Jika counter di-reset setiap stream dimulai ulang, ID berita akan terulang
+     * sehingga berita yang sudah dibaca kembali ditandai "telah dibaca".
+     */
+    private val newsIdCounter = AtomicInteger(0)
+
     init {
         // Otomatis memulai suapan berita saat ViewModel diinisialisasi
         startStream()
@@ -58,15 +66,15 @@ class NewsViewModel : ViewModel() {
     // FITUR 1: Flow yang mensimulasikan data berita baru setiap 2 detik
     // =========================================================================
     fun getRawNewsStream(): Flow<News> = flow {
-        var counter = 0
+        var templateIndex = 0
         while (currentCoroutineContext().isActive) {
-            val template = realNewsData[counter % realNewsData.size]
+            val template = realNewsData[templateIndex % realNewsData.size]
+            templateIndex++
             val simulatedNews = template.copy(
-                id = counter + 1,
+                id = newsIdCounter.incrementAndGet(),
                 timestamp = System.currentTimeMillis()
             )
             emit(simulatedNews)
-            counter++
             delay(2000L) // Jeda 2 detik simulasi berita masuk
         }
     }
@@ -98,18 +106,22 @@ class NewsViewModel : ViewModel() {
      * Transformasi data objek mentah News menjadi FormattedNews untuk tampilan UI.
      */
     private fun transformToFormattedNews(news: News): FormattedNews {
-        val timeFormatter = SimpleDateFormat("HH:mm:ss 'WIB'", Locale.forLanguageTag("id-ID"))
-        val formattedTime = timeFormatter.format(Date(news.timestamp))
+        val locale = Locale.forLanguageTag("id-ID")
+        val publishDate = Date(news.timestamp)
+        val timeFormatter = SimpleDateFormat("HH:mm:ss", locale)
+        val dateFormatter = SimpleDateFormat("EEEE, dd MMMM yyyy", locale)
         val isRead = _readNewsIds.value.contains(news.id)
 
         return FormattedNews(
             id = news.id,
             originalTitle = news.title,
-            formattedTitle = "[${news.category.uppercase(Locale.getDefault())}] ${news.title}",
+            formattedTitle = "[${news.category.uppercase(locale)}] ${news.title}",
             category = news.category,
             previewContent = if (news.content.length > 80) news.content.take(80) + "..." else news.content,
-            formattedTime = formattedTime,
+            formattedTime = "${timeFormatter.format(publishDate)} WIB",
             author = news.author,
+            publishedDate = dateFormatter.format(publishDate),
+            fullContent = news.content,
             isRead = isRead
         )
     }
@@ -166,22 +178,32 @@ class NewsViewModel : ViewModel() {
      */
     suspend fun fetchNewsDetailAsync(newsId: Int): String = withContext(Dispatchers.IO) {
         delay(1000L) // Simulasi network delay async 1 detik
-        val news = realNewsData.find {
-            (it.id == newsId) || (((newsId - 1) % realNewsData.size) + 1 == it.id)
-        } ?: realNewsData.first()
 
-        val fullDateFormatter = SimpleDateFormat("EEEE, dd MMMM yyyy HH:mm:ss", Locale.forLanguageTag("id-ID"))
-        val dateString = fullDateFormatter.format(Date(System.currentTimeMillis()))
+        // Prioritas: ambil item yang benar-benar tampil di feed agar isi artikel
+        // selalu konsisten dengan judul yang diklik pengguna.
+        val displayed = _newsFeedList.value.firstOrNull { it.id == newsId }
+
+        // Fallback bila berita tidak ada di feed (mis. dipanggil langsung dari logcat).
+        val fallback = realNewsData[Math.floorMod(newsId - 1, realNewsData.size)]
+
+        val title = displayed?.originalTitle ?: fallback.title
+        val category = displayed?.category ?: fallback.category
+        val author = displayed?.author ?: fallback.author
+        val body = displayed?.fullContent ?: fallback.content
+        val publishedDate = displayed?.publishedDate ?: SimpleDateFormat(
+            "EEEE, dd MMMM yyyy",
+            Locale.forLanguageTag("id-ID")
+        ).format(Date(System.currentTimeMillis()))
 
         """
         |Detail Artikel #${newsId}:
-        |Judul   : ${news.title}
-        |Kategori: ${news.category}
-        |Penulis : ${news.author}
-        |Waktu   : $dateString WIB
+        |Judul   : ${title}
+        |Kategori: ${category}
+        |Penulis : ${author}
+        |Waktu   : ${publishedDate} WIB
         |
         |Konten Berita Lengkap:
-        |${news.content}
+        |${body}
         """.trimMargin()
     }
 

@@ -117,9 +117,7 @@ fun NewsAppScreen(viewModel: NewsViewModel) {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // =================================================================
-            // FITUR 2: FILTER KATEGORI (Chips)
-            // =================================================================
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -153,9 +151,6 @@ fun NewsAppScreen(viewModel: NewsViewModel) {
                 }
             }
 
-            // =================================================================
-            // STATUS BAR SIMULASI & KONTROL STREAM
-            // =================================================================
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = if (isStreaming) Color(0xFFE8F5E9) else Color(0xFFFFF3E0),
@@ -210,7 +205,6 @@ fun NewsAppScreen(viewModel: NewsViewModel) {
             }
 
             HorizontalDivider()
-
             // =================================================================
             // FITUR 1 & FITUR 3: DAFTAR BERITA MASUK (Flow & Transform)
             // =================================================================
@@ -271,9 +265,6 @@ fun NewsAppScreen(viewModel: NewsViewModel) {
         }
     }
 
-    // =========================================================================
-    // FITUR 5: DIALOG DETAIL BERITA ASYNC (Coroutines withContext(Dispatchers.IO))
-    // =========================================================================
     if (detailState.isOpen) {
         AlertDialog(
             onDismissRequest = {
@@ -412,8 +403,6 @@ fun NewsCard(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
                 }
-
-                // Waktu & Status Dibaca
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = news.formattedTime,
@@ -454,7 +443,7 @@ fun NewsCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Judul Terformat (Fitur 3: Transform)
+            // Judul Terformat
             Text(
                 text = news.formattedTitle,
                 style = MaterialTheme.typography.titleMedium,
@@ -467,7 +456,6 @@ fun NewsCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Ringkasan Cuplikan Teks
             Text(
                 text = news.previewContent,
                 style = MaterialTheme.typography.bodyMedium,

@@ -1,9 +1,5 @@
 package com.example.pamtugas2
 
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
 /**
  * Model data mentah untuk merepresentasikan sebuah artikel berita.
  */
@@ -27,6 +23,8 @@ data class FormattedNews(
     val previewContent: String,    // Ringkasan singkat isi berita
     val formattedTime: String,     // Format jam WIB (misal: "14:30:15 WIB")
     val author: String,
+    val publishedDate: String,     // Tanggal lengkap WIB (misal: "Jumat, 25 September 2026")
+    val fullContent: String,       // Isi artikel lengkap (disimpan saat transform)
     val isRead: Boolean = false
 ) {
     override fun toString(): String {
