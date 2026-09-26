@@ -1,8 +1,5 @@
 package com.example.pamtugas2
 
-/**
- * Model data mentah untuk merepresentasikan sebuah artikel berita.
- */
 data class News(
     val id: Int,
     val title: String,
@@ -12,9 +9,6 @@ data class News(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-/**
- * Model data presentasi setelah proses transformasi (Fitur 3: Transform data).
- */
 data class FormattedNews(
     val id: Int,
     val originalTitle: String,
@@ -32,9 +26,6 @@ data class FormattedNews(
     }
 }
 
-/**
- * State untuk dialog detail berita yang dimuat secara asinkron (Fitur 5: Coroutines async).
- */
 data class NewsDetailState(
     val isOpen: Boolean = false,
     val isLoading: Boolean = false,
@@ -45,9 +36,6 @@ data class NewsDetailState(
     val detailContent: String = ""
 )
 
-/**
- * Kumpulan data berita simulasi yang mencakup berbagai kategori.
- */
 val realNewsData = listOf(
     News(
         id = 1,
@@ -121,7 +109,4 @@ val realNewsData = listOf(
     )
 )
 
-/**
- * Daftar kategori yang tersedia untuk pemfilteran berita.
- */
 val availableCategories = listOf("Semua", "Teknologi", "Ekonomi", "Sukan", "Semasa")
